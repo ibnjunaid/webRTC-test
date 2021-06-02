@@ -21,7 +21,7 @@ window.onload = async () =>{
         
         const localstream =  await navigator.mediaDevices.getUserMedia({
             video : true,
-            audio : false
+            audio : true
         });
 
         localstream.getTracks().forEach( track => {
