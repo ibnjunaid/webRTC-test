@@ -16,7 +16,8 @@ window.onload = async () => {
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     };
 
-    const handleOffer = async ({client, offer }) =>{
+    const handleOffer = async (client, offer ) =>{
+      console.log('Hanlde offer');
       const peerConnection = new RTCPeerConnection(configuration);
       peerConnection.addEventListener("connectionstatechange",console.log(peerConnection.signalingState));
       window.p = peerConnection;
@@ -30,7 +31,10 @@ window.onload = async () => {
       await peerConnection.setLocalDescription(answer);
       socket.emit('answer',{client,answer});
     }
-    socket.on('offer',handleOffer) 
+    socket.on('offer',({client,offer}) =>{
+      console.log("offer")
+      handleOffer(client,offer);
+    }) 
 
   } catch (error) {
     console.error(error);
