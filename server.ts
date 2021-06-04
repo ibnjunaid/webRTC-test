@@ -1,4 +1,3 @@
-
 import express from 'express';
 import path from "path";
 import { Socket } from 'socket.io';
@@ -31,20 +30,25 @@ io.on('connect',(socket:Socket) => {
     socket.on('view',(client) =>{
         console.log('view',client,'-------------')
         io.to(client.missionID).emit('start_RTC',client);
-        // socket.to(client.missionID).emit('start_RTC',client);
     })
 
     socket.on("offer",({client,offer}) =>{
-        console.log(Object.keys(client))
         console.log('offer','------------------')
-        io.to(client.caller).emit('offer',{client,offer});
-        // socket.to(client.caller).emit('offer',{client,offer});
+        io.to(client.missionID).emit('offer',{client,offer});
     })
 
     socket.on('answer',({client,answer}) =>{
         console.log('answer------------------')
         console.log(client);
-        io.to(client.missionID).emit('answer',{client,answer})
+        io.to(client.sid).emit('answer',{client,answer})
+    })
+
+    socket.on('c_offer',({client,offer}) =>{
+        socket.broadcast.emit('message',{client,offer});
+    })
+
+    socket.on('c_answer', ({answer}) =>{
+        socket.broadcast.emit('message',{answer});
     })
 
 })

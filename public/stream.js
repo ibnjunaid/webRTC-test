@@ -8,6 +8,7 @@ window.onload = async () => {
       video: true,
       audio: true,
     });
+    player.srcObject = localstream;
 
     window.l = localstream;
 
@@ -15,30 +16,22 @@ window.onload = async () => {
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     };
 
-    const peerConnections = [];
-    const remoteDesc = [];
-    
-    window.a = peerConnections;
+    const handleOffer = async ({client, offer }) =>{
+      const peerConnection = new RTCPeerConnection(configuration);
+      peerConnection.addEventListener("connectionstatechange",console.log(peerConnection.signalingState));
+      window.p = peerConnection;
 
-    socket.on("start_RTC", async (client) => {
-      peerConnections[client.caller] = new RTCPeerConnection(configuration);
-      localstream.getTracks().forEach((track) => {
-        peerConnections[client.caller].addTrack(track, localstream);
-      });
-      const offer = await peerConnections[client.caller].createOffer();
-      await peerConnections[client.caller].setLocalDescription(offer);
-      socket.emit("offer", { client,offer });
-    });
-    
-    socket.on('answer',async (message) =>{
-        console.log(message);
-        console.log('answer received');
-        remoteDesc[message.client.caller] = new RTCSessionDescription(message.answer);
-        await peerConnections[message.client.caller].setRemoteDescription(remoteDesc[message.client.caller]);
-        console.log(`Got answer by ${message.client.caller}`);
-    })
+      localstream.getTracks().forEach( track => {
+        peerConnection.addTrack(track,localstream);
+      }) 
 
-    player.srcObject = localstream;
+      await peerConnection.setRemoteDescription(offer);
+      const answer = await peerConnection.createAnswer(offer)
+      await peerConnection.setLocalDescription(answer);
+      socket.emit('answer',{client,answer});
+    }
+    socket.on('offer',handleOffer) 
+
   } catch (error) {
     console.error(error);
   }

@@ -3,6 +3,17 @@ window.onload = async () =>{
         const person = prompt("Enter Your name?");
         const socket = io(`/?name=${person}`);
 
+        const player = document.querySelector("video#localVideo");
+        const callBtn = document.querySelector("Button#callButton");
+        const hangBtn = document.querySelector("Button#hangButton");
+
+        socket.on("connect",()=>{
+            const client = {
+                name : person
+            }
+            callBtn.addEventListener('click',clickeHandler);
+        })
+
         const remoteStream = new MediaStream();
         const remoteVideo = document.querySelector("video#remoteVideo");
 
@@ -35,7 +46,7 @@ window.onload = async () =>{
                 peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
                 const answer = await peerConnection.createAnswer();
                 await peerConnection.setLocalDescription(answer);
-                socket.emit('answer',{answer});
+                socket.emit('c_answer',{answer});
                 console.log(`offer Received by ${person}`)
             }
             else if(message.answer){
@@ -46,17 +57,13 @@ window.onload = async () =>{
         })
 
 
-        const player = document.querySelector("video#localVideo");
-        const callBtn = document.querySelector("Button#callButton");
-        const hangBtn = document.querySelector("Button#hangButton");
-
         player.srcObject = localstream;
 
-        callBtn.addEventListener('click',async () =>{
+        async function clickeHandler (client){
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
-            socket.emit('offer',{offer});
-        })
+            socket.emit('c_offer',{client, offer});
+        }
 
 
     } catch (error) {
