@@ -4,7 +4,7 @@ window.onload = async () =>{
         const socket = io(`/?name=${person}`);
 
         const localstream = await navigator.mediaDevices.getUserMedia({
-            video: false,
+            video: true,
             audio: true,
         });
 
