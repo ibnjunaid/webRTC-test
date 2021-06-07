@@ -42,6 +42,10 @@ io.on('connect',(socket:Socket) => {
         console.log(client);
         io.to(client.sid).emit('answer',{client,answer})
     })
+    socket.on('candidate',(d) =>{
+        console.log('candidate found');
+        socket.broadcast.emit('message',d);
+    })
 
     socket.on('c_offer',({client,offer}) =>{
         socket.broadcast.emit('message',{client,offer});

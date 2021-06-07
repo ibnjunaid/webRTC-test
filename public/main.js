@@ -11,7 +11,7 @@ window.onload = async () =>{
             const client = {
                 name : person
             }
-            callBtn.addEventListener('click',clickeHandler);
+            callBtn.addEventListener('click',clickHandler);
         })
 
         const remoteStream = new MediaStream();
@@ -22,7 +22,18 @@ window.onload = async () =>{
         const configuration = {'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]}
         const peerConnection = new RTCPeerConnection(configuration); 
 
-        peerConnection.addEventListener("connectionstatechange",console.log(peerConnection.signalingState || "Hello"));
+        peerConnection.onicecandidate = (e) => {
+            if(e.candidate){
+                socket.emit('candidate',{candidate : e.candidate})
+            }
+        }
+        // peerConnection.onicegatheringstatechange = (e) =>{
+
+        // }
+
+        // peerConnection.oniceconnectionstatechange = (e) =>{
+        //     console.log('Connection State: ', e);
+        // }
 
         peerConnection.addEventListener('track',async (e) =>{
             console.log('remote Track found');
@@ -53,13 +64,19 @@ window.onload = async () =>{
                 const remoteDesc = new RTCSessionDescription(message.answer)
                 await peerConnection.setRemoteDescription(remoteDesc);
                 console.log(`Answer by ${person}`)
+            } else if (message.candidate) {
+                peerConnection.addIceCandidate(message.candidate)
+                              .then(() =>{
+                                  console.log("Sucessfully added candidate")
+                              })
+                              .catch(console.error);
             }
         })
 
 
         player.srcObject = localstream;
 
-        async function clickeHandler (client){
+        async function clickHandler (client){
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
             socket.emit('c_offer',{client, offer});

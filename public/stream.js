@@ -19,6 +19,15 @@ window.onload = async () => {
     const handleOffer = async (client, offer ) =>{
       console.log('Hanlde offer');
       const peerConnection = new RTCPeerConnection(configuration);
+      
+      peerConnection.addEventListener("icecandidate",(e) =>{
+        console.log(e);
+      })
+      
+      peerConnection.oniceconnectionstatechange = (e) =>{
+        console.log(e);
+      }
+
       peerConnection.addEventListener("connectionstatechange",console.log(peerConnection.signalingState));
       window.p = peerConnection;
 
@@ -28,7 +37,7 @@ window.onload = async () => {
 
       await peerConnection.setRemoteDescription(offer);
       const answer = await peerConnection.createAnswer(offer)
-      await peerConnection.setLocalDescription(answer);
+      await peerConnection.setLocalDescription(answer); 
       socket.emit('answer',{client,answer});
     }
     socket.on('offer',({client,offer}) =>{

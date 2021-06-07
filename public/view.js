@@ -1,12 +1,16 @@
 window.onload = async () =>{
     try {
         const person = "viewer";
-        const socket = io(`/?name=${person}`);
+        const socket = io(`/?name=${person}`,{
+            reconnect : false
+        });
 
         const localstream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: true,
         });
+
+        window.s = socket;
 
         const remoteStream = new MediaStream();
         window.r = remoteStream;
@@ -15,9 +19,9 @@ window.onload = async () =>{
         const configuration = {'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]}
         const peerConnection = new RTCPeerConnection(configuration); 
 
-        localstream.getTracks().forEach( track => {
-            peerConnection.addTrack(track,localstream);
-        }) 
+        // localstream.getTracks().forEach( track => {
+        //     peerConnection.addTrack(track,localstream);
+        // }) 
 
         window.p = peerConnection;
 
@@ -26,13 +30,20 @@ window.onload = async () =>{
         btn.disabled = true;
         
         socket.on("connect", () =>{
-            console.log("socket initialized");
+            console.log("socket connected");
             btn.addEventListener("click",emitOffer)
             btn.disabled = false;
         })
 
+        if(socket.connected){
+            console.log("socket connected");
+            btn.addEventListener("click",emitOffer)
+            btn.disabled = false;
+        }
+
         async function emitOffer(){
-            const offer = await peerConnection.createOffer();
+            console.log("offer emitted");
+            const offer = await peerConnection.createOffer({offerToReceiveVideo : true, offerToReceiveAudio : true});
             await peerConnection.setLocalDescription(offer);
             const client = {sid:socket.id,missionID:'123'}
             socket.emit('offer',{client,offer});
