@@ -2,7 +2,13 @@
 import express from 'express';
 import path from "path";
 import { Socket } from 'socket.io';
+const webrtc = require('wrtc');
+
 const app = express();
+
+let senderStream: any;
+// let senderStream = new Map<string,any>();
+
 
 const PORT = process.env.PORT || 8080;
 
@@ -61,6 +67,60 @@ app.set("view engine", "ejs")
 app.get("/",(req,res) =>{
     res.render('index');
 })
+
+app.get('/stream', (req,res) =>{
+    res.render('streamer')
+})
+
+app.get('/view', (req,res) =>{
+    res.render('viewer')
+})
+
+app.post("/consumer", async ({ body }, res) => {
+    console.log(body);
+    const peer = new webrtc.RTCPeerConnection({
+        iceServers: [
+            {
+                urls: "stun:stun.stunprotocol.org"
+            }
+        ]
+    });
+    const desc = new webrtc.RTCSessionDescription(body.sdp);
+    await peer.setRemoteDescription(desc);
+    senderStream.getTracks().forEach((track: any) => peer.addTrack(track, senderStream));
+    const answer = await peer.createAnswer();
+    await peer.setLocalDescription(answer);
+    const payload = {
+        sdp: peer.localDescription
+    }
+
+    res.json(payload);
+});
+
+app.post('/broadcast', async ({ body }, res) => {
+    console.log(body);
+    const peer = new webrtc.RTCPeerConnection({
+        iceServers: [
+            {
+                urls: "stun:stun.stunprotocol.org"
+            }
+        ]
+    });
+    peer.ontrack = (e:any) => handleTrackEvent(e, peer);
+    const desc = new webrtc.RTCSessionDescription(body.sdp);
+    await peer.setRemoteDescription(desc);
+    const answer = await peer.createAnswer();
+    await peer.setLocalDescription(answer);
+    const payload = {
+        sdp: peer.localDescription
+    }
+
+    res.json(payload);
+});
+
+function handleTrackEvent(e:any, peer:any) {
+    senderStream = e.streams[0];
+};
 
 httpServer.listen(PORT,()=>{
     console.log('http://localhost:'+PORT)
