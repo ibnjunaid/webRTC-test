@@ -1,4 +1,3 @@
-
 import express from 'express';
 import path from "path";
 import { Socket } from 'socket.io';
@@ -22,39 +21,46 @@ const io = new socket.Server(httpServer)
 
 const userToSocketID = new Map<string,string>();
 
-const mapUserToSID = (S : Socket, next: NextFunction) =>{
-    console.log(`${S.handshake.query.name} mapped to ${S.id}`);
-    if(! userToSocketID.has( String(S.handshake.query.name) )){
-        userToSocketID.set(String(S.handshake.query.name),S.id);
+
+const mapUsersToRooms = (S :Socket, next : NextFunction) =>{
+    if(S.handshake.query.name === 'streamer'){
+        S.join(S.handshake.query.missionID || '');
+        console.log(S.id, ' Joined room ', S.handshake.query.name);
     }
     next();
 }
 
-const removeUserFromMap = (S : Socket) => {
-    if(userToSocketID.has( String(S.handshake.query.name) )){
-        userToSocketID.delete(String(S.handshake.query.name));
-    }
-    console.log(`${S.handshake.query.name} unmapped to ${S.id}`);
-}
-
 io.on('connect',(socket:Socket) => {
-    io.use(mapUserToSID)
-    socket.on('getAvailableUsers',(...d) => {
-        console.log("Hello",d);
-        socket.emit('gotUsers',Array.from(userToSocketID.keys()));
+    io.use(mapUsersToRooms);
+
+    socket.on('view',(client) =>{
+        console.log('view',client,'-------------')
+        io.to(client.missionID).emit('start_RTC',client);
     })
-    socket.on("disconnect",(...r) =>{
-        console.log(r);
-        removeUserFromMap(socket);
+
+    socket.on("offer",({client,offer}) =>{
+        console.log('offer','------------------')
+        io.to(client.missionID).emit('offer',{client,offer});
     })
-    socket.on('offer',(d) =>{
-        console.log("Offer");
-        socket.broadcast.emit("message",d);
-    } );
-    socket.on("answer",(d) => {
-        console.log("Answer")
-        socket.broadcast.emit("message",d);
+
+    socket.on('answer',({client,answer}) =>{
+        console.log('answer------------------')
+        console.log(client);
+        io.to(client.sid).emit('answer',{client,answer})
     })
+    socket.on('candidate',(d) =>{
+        console.log('candidate found');
+        socket.broadcast.emit('message',d);
+    })
+
+    socket.on('c_offer',({client,offer}) =>{
+        socket.broadcast.emit('message',{client,offer});
+    })
+
+    socket.on('c_answer', ({answer}) =>{
+        socket.broadcast.emit('message',{answer});
+    })
+
 })
 
 

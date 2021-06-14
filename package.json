@@ -17,6 +17,7 @@
     "wrtc": "^0.4.7"
   },
   "scripts": {
+    "dev": "nodemon server.ts",
     "start": "ts-node server.ts"
   },
   "devDependencies": {

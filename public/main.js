@@ -3,6 +3,17 @@ window.onload = async () =>{
         const person = prompt("Enter Your name?");
         const socket = io(`/?name=${person}`);
 
+        const player = document.querySelector("video#localVideo");
+        const callBtn = document.querySelector("Button#callButton");
+        const hangBtn = document.querySelector("Button#hangButton");
+
+        socket.on("connect",()=>{
+            const client = {
+                name : person
+            }
+            callBtn.addEventListener('click',clickHandler);
+        })
+
         const remoteStream = new MediaStream();
         const remoteVideo = document.querySelector("video#remoteVideo");
 
@@ -11,7 +22,18 @@ window.onload = async () =>{
         const configuration = {'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]}
         const peerConnection = new RTCPeerConnection(configuration); 
 
-        peerConnection.addEventListener("connectionstatechange",console.log(peerConnection.signalingState || "Hello"));
+        peerConnection.onicecandidate = (e) => {
+            if(e.candidate){
+                socket.emit('candidate',{candidate : e.candidate})
+            }
+        }
+        // peerConnection.onicegatheringstatechange = (e) =>{
+
+        // }
+
+        // peerConnection.oniceconnectionstatechange = (e) =>{
+        //     console.log('Connection State: ', e);
+        // }
 
         peerConnection.addEventListener('track',async (e) =>{
             console.log('remote Track found');
@@ -35,28 +57,30 @@ window.onload = async () =>{
                 peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
                 const answer = await peerConnection.createAnswer();
                 await peerConnection.setLocalDescription(answer);
-                socket.emit('answer',{answer});
+                socket.emit('c_answer',{answer});
                 console.log(`offer Received by ${person}`)
             }
             else if(message.answer){
                 const remoteDesc = new RTCSessionDescription(message.answer)
                 await peerConnection.setRemoteDescription(remoteDesc);
                 console.log(`Answer by ${person}`)
+            } else if (message.candidate) {
+                peerConnection.addIceCandidate(message.candidate)
+                              .then(() =>{
+                                  console.log("Sucessfully added candidate")
+                              })
+                              .catch(console.error);
             }
         })
 
 
-        const player = document.querySelector("video#localVideo");
-        const callBtn = document.querySelector("Button#callButton");
-        const hangBtn = document.querySelector("Button#hangButton");
-
         player.srcObject = localstream;
 
-        callBtn.addEventListener('click',async () =>{
+        async function clickHandler (client){
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
-            socket.emit('offer',{offer});
-        })
+            socket.emit('c_offer',{client, offer});
+        }
 
 
     } catch (error) {
