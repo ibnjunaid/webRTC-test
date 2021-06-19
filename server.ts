@@ -87,7 +87,7 @@ app.post("/consumer", async ({ body }, res) => {
     const peer = new webrtc.RTCPeerConnection({
         iceServers: [
             {
-                urls: "stun:stun.stunprotocol.org"
+                urls: "stun:stun.l.google.com:19302"
             }
         ]
     });
@@ -105,17 +105,17 @@ app.post("/consumer", async ({ body }, res) => {
 
 app.post('/broadcast', async ({ body }, res) => {
     console.log(body);
-    const peer = new webrtc.RTCPeerConnection({
+    const peer : RTCPeerConnection = new webrtc.RTCPeerConnection({
         iceServers: [
             {
-                urls: "stun:stun.stunprotocol.org"
+                urls: "stun:stun.l.google.com:19302"
             }
         ]
     });
     peer.ontrack = (e:any) => handleTrackEvent(e, peer);
     const desc = new webrtc.RTCSessionDescription(body.sdp);
     await peer.setRemoteDescription(desc);
-    const answer = await peer.createAnswer();
+    const answer = await peer.createAnswer({offerToReceiveAudio:true,offerToReceiveVideo:true});
     await peer.setLocalDescription(answer);
     const payload = {
         sdp: peer.localDescription
@@ -125,7 +125,10 @@ app.post('/broadcast', async ({ body }, res) => {
 });
 
 function handleTrackEvent(e:any, peer:any) {
+    console.log('track handled')
+    console.log(e);
     senderStream = e.streams[0];
+    console.log(senderStream);
 };
 
 httpServer.listen(PORT,()=>{

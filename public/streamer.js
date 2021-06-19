@@ -9,6 +9,7 @@ async function init() {
     document.getElementById("video").srcObject = stream;
     const peer = createPeer();
     stream.getTracks().forEach(track => peer.addTrack(track, stream));
+    console.log('Initialised');
 }
 
 
@@ -16,10 +17,11 @@ function createPeer() {
     const peer = new RTCPeerConnection({
         iceServers: [
             {
-                urls: "stun:stun.stunprotocol.org"
+                urls: "stun:stun.l.google.com:19302"
             }
         ]
     });
+    console.log('peer connection created');
     peer.onnegotiationneeded = () => handleNegotiationNeededEvent(peer);
 
     return peer;
@@ -33,6 +35,7 @@ async function handleNegotiationNeededEvent(peer) {
     };
 
     const { data } = await axios.post('/broadcast', payload);
+    console.log(data);
     const desc = new RTCSessionDescription(data.sdp);
     peer.setRemoteDescription(desc).catch(e => console.log(e));
 }
