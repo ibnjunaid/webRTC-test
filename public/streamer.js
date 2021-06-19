@@ -17,12 +17,15 @@ function createPeer() {
     const peer = new RTCPeerConnection({
         iceServers: [
             {
-                urls: "stun:stun.l.google.com:19302"
+                urls: "turn:14.97.37.70:3478",
+                username : "test",
+                credential : "test123"
             }
         ]
     });
     console.log('peer connection created');
     peer.onnegotiationneeded = () => handleNegotiationNeededEvent(peer);
+    window.p = peer;
 
     return peer;
 }

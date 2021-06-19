@@ -87,7 +87,9 @@ app.post("/consumer", async ({ body }, res) => {
     const peer = new webrtc.RTCPeerConnection({
         iceServers: [
             {
-                urls: "stun:stun.l.google.com:19302"
+                urls: "turn:14.97.37.70:3478",
+                username : "test",
+                credential : "test123"
             }
         ]
     });
@@ -108,7 +110,9 @@ app.post('/broadcast', async ({ body }, res) => {
     const peer : RTCPeerConnection = new webrtc.RTCPeerConnection({
         iceServers: [
             {
-                urls: "stun:stun.l.google.com:19302"
+                urls: "turn:14.97.37.70:3478",
+                username : "test",
+                credential : "test123"
             }
         ]
     });
