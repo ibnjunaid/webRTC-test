@@ -5,8 +5,7 @@ const webrtc = require('wrtc');
 
 const app = express();
 
-let senderStream: any;
-// let senderStream = new Map<string,any>();
+let senderStreams = new Map<string,any>();
 
 
 const PORT = process.env.PORT || 8080;
@@ -83,7 +82,6 @@ app.get('/view', (req,res) =>{
 })
 
 app.post("/consumer", async ({ body }, res) => {
-    console.log(body);
     const peer = new webrtc.RTCPeerConnection({
         iceServers: [
             {
@@ -95,6 +93,14 @@ app.post("/consumer", async ({ body }, res) => {
     });
     const desc = new webrtc.RTCSessionDescription(body.sdp);
     await peer.setRemoteDescription(desc);
+    const senderStream = senderStreams.get(body.missionId)
+    if(senderStream == null){
+        console.log(`No mission with missionId ${body.missionId}`);
+        res.status(404).json({
+            message : "No stream found with the missionId"
+        })
+        return;
+    }
     senderStream.getTracks().forEach((track: any) => peer.addTrack(track, senderStream));
     const answer = await peer.createAnswer();
     await peer.setLocalDescription(answer);
@@ -116,7 +122,7 @@ app.post('/broadcast', async ({ body }, res) => {
             }
         ]
     });
-    peer.ontrack = (e:any) => handleTrackEvent(e, peer);
+    peer.ontrack = (e:any) => handleTrackEvent(e, peer,body.missionId);
     const desc = new webrtc.RTCSessionDescription(body.sdp);
     await peer.setRemoteDescription(desc);
     const answer = await peer.createAnswer({offerToReceiveAudio:true,offerToReceiveVideo:true});
@@ -128,11 +134,9 @@ app.post('/broadcast', async ({ body }, res) => {
     res.json(payload);
 });
 
-function handleTrackEvent(e:any, peer:any) {
+function handleTrackEvent(e:any, peer:any, missionId:string) {
     console.log('track handled')
-    console.log(e);
-    senderStream = e.streams[0];
-    console.log(senderStream);
+    senderStreams.set(missionId,e.streams[0]);
 };
 
 httpServer.listen(PORT,()=>{

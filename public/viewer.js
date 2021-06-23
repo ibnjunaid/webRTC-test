@@ -4,6 +4,8 @@ window.onload = () => {
     }
 }
 
+const missionId = prompt("Enter the missionId");
+
 async function init() {
     const peer = createPeer();
     peer.addTransceiver("video", { direction: "recvonly" })
@@ -29,7 +31,8 @@ async function handleNegotiationNeededEvent(peer) {
     const offer = await peer.createOffer();
     await peer.setLocalDescription(offer);
     const payload = {
-        sdp: peer.localDescription
+        sdp: peer.localDescription,
+        missionId : missionId
     };
 
     const { data } = await axios.post('/consumer', payload);

@@ -4,6 +4,8 @@ window.onload = () => {
     }
 }
 
+const missionId = prompt("Enter The missionId");
+
 async function init() {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     document.getElementById("video").srcObject = stream;
@@ -34,7 +36,8 @@ async function handleNegotiationNeededEvent(peer) {
     const offer = await peer.createOffer();
     await peer.setLocalDescription(offer);
     const payload = {
-        sdp: peer.localDescription
+        sdp: peer.localDescription,
+        missionId : missionId
     };
 
     const { data } = await axios.post('/broadcast', payload);
